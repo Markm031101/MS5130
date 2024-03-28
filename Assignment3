@@ -2,7 +2,6 @@ library(tidyverse)
 library(dplyr)
 library(ggplot2)
 
-# Loading datasets
 usa_cars <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/USA_cars_datasets.csv")
 fuel_economy <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Fuel_Eco_Data.csv")
 vehicle_registrations <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/US_Motor_Reg.csv")
@@ -10,7 +9,6 @@ colnames(usa_cars)
 colnames(fuel_economy)
 colnames(vehicle_registrations)
 
-# Cleaning the USA Cars dataset
 usa_cars <- usa_cars %>%
   # Remove duplicate rows
   distinct() %>%
@@ -19,7 +17,7 @@ usa_cars <- usa_cars %>%
   # Ensure 'Year' is an integer
   mutate(year = as.integer(year))
 
-# Cleaning the Vehicle Fuel Economy Data
+
 fuel_economy <- fuel_economy %>%
   select(-barrels08, -barrelsA08, -charge240, -city08, -city08U, -cityA08, -cityA08U, -cityCD, -cityE, -cityUF, -co2A, co2TailpipeAGpm,
          -co2TailpipeGpm, -comb08, -comb08U, -combA08, -combA08U, -combE, -combinedCD, -combinedUF, -cylinders, -displ, -drive, -engId,
@@ -40,7 +38,6 @@ colnames(fuel_economy)
 fuel_economy <- fuel_economy %>%
   drop_na()
  
-# Cleaning the US Motor Vehicle Registrations data
 vehicle_registrations <- vehicle_registrations %>%
   # Remove rows with NA 
   drop_na()

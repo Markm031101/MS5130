@@ -10,11 +10,8 @@ colnames(fuel_economy)
 colnames(vehicle_registrations)
 
 usa_cars <- usa_cars %>%
-  # Remove duplicate rows
   distinct() %>%
-  # Drop rows with any missing values
   drop_na() %>%
-  # Ensure 'Year' is an integer
   mutate(year = as.integer(year))
 
 

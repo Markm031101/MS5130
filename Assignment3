@@ -1,0 +1,66 @@
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+
+# Loading datasets
+usa_cars <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/USA_cars_datasets.csv")
+fuel_economy <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Fuel_Eco_Data.csv")
+vehicle_registrations <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/US_Motor_Reg.csv")
+colnames(usa_cars)
+colnames(fuel_economy)
+colnames(vehicle_registrations)
+
+# Cleaning the USA Cars dataset
+usa_cars <- usa_cars %>%
+  # Remove duplicate rows
+  distinct() %>%
+  # Drop rows with any missing values
+  drop_na() %>%
+  # Ensure 'Year' is an integer
+  mutate(year = as.integer(year))
+
+# Cleaning the Vehicle Fuel Economy Data
+fuel_economy <- fuel_economy %>%
+  select(-barrels08, -barrelsA08, -charge240, -city08, -city08U, -cityA08, -cityA08U, -cityCD, -cityE, -cityUF, -co2A, co2TailpipeAGpm,
+         -co2TailpipeGpm, -comb08, -comb08U, -combA08, -combA08U, -combE, -combinedCD, -combinedUF, -cylinders, -displ, -drive, -engId,
+         -eng_dscr, -feScore, -fuelCost08, -fuelCostA08, -fuelType, -fuelType1, -ghgScore, -ghgScoreA, -highway08, -highway08U, -highwayA08,
+         -highwayA08U, -VClass, -highwayCD, -highwayE, -highwayUF, -hlv, -hpv, -lv2, -lv4, -mpgData, -phevBlended, -pv2, -pv4,
+         -range, -rangeCity, -rangeCityA, -rangeHwy, -rangeHwyA, -trany, -UCity, -UCityA, -UHighway, -UHighwayA, -youSaveSpend,
+         -guzzler, -trans_dscr, -tCharger, -sCharger, -atvType, -fuelType2, -rangeA, -evMotor, -startStop, -phevCity, -phevHwy)
+ 
+
+colnames(fuel_economy)
+
+
+fuel_economy <- fuel_economy %>%
+  select(-co2TailpipeAGpm, -mfrCode, -c240Dscr, -charge240b, -c240bDscr, -createdOn, -modifiedOn)
+
+colnames(fuel_economy)
+
+fuel_economy <- fuel_economy %>%
+  drop_na()
+ 
+# Cleaning the US Motor Vehicle Registrations data
+vehicle_registrations <- vehicle_registrations %>%
+  # Remove rows with NA 
+  drop_na()
+
+colnames(fuel_economy)
+colnames(usa_cars)
+colnames(vehicle_registrations)
+
+usa_cars <- usa_cars %>%
+  rename(Year = year)
+
+combined_data <- usa_cars %>%
+  inner_join(fuel_economy, by = c("Year")) %>%
+  inner_join(vehicle_registrations, by = "Year")
+
+glimpse(combined_data)
+summary(combined_data)
+combined_data <- combined_data %>%
+  select(-...1)
+  
+colnames(combined_data)
+
+combined_data

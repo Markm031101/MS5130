@@ -1,60 +1,95 @@
 library(tidyverse)
-library(dplyr)
-library(ggplot2)
 
-usa_cars <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/USA_cars_datasets.csv")
-fuel_economy <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Fuel_Eco_Data.csv")
-vehicle_registrations <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/US_Motor_Reg.csv")
-colnames(usa_cars)
-colnames(fuel_economy)
-colnames(vehicle_registrations)
+Total_Rainfall_df <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Total_Rainfall.csv")
+Total_Sunshine_df <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Total_Sunshine.csv")
+Total_Degrees_df <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Total_Degrees.csv")
 
-usa_cars <- usa_cars %>%
-  distinct() %>%
-  drop_na() %>%
-  mutate(year = as.integer(year))
+colnames(Total_Rainfall_df)
+colnames(Total_Sunshine_df)
+colnames(Total_Degrees_df)
 
+Total_Rainfall_df <- Total_Rainfall_df %>% drop_na()
+Total_Degrees_df <- Total_Degrees_df %>% drop_na()
+Total_Sunshine_df <- Total_Sunshine_df %>% drop_na()
 
-fuel_economy <- fuel_economy %>%
-  select(-barrels08, -barrelsA08, -charge240, -city08, -city08U, -cityA08, -cityA08U, -cityCD, -cityE, -cityUF, -co2A, co2TailpipeAGpm,
-         -co2TailpipeGpm, -comb08, -comb08U, -combA08, -combA08U, -combE, -combinedCD, -combinedUF, -cylinders, -displ, -drive, -engId,
-         -eng_dscr, -feScore, -fuelCost08, -fuelCostA08, -fuelType, -fuelType1, -ghgScore, -ghgScoreA, -highway08, -highway08U, -highwayA08,
-         -highwayA08U, -VClass, -highwayCD, -highwayE, -highwayUF, -hlv, -hpv, -lv2, -lv4, -mpgData, -phevBlended, -pv2, -pv4,
-         -range, -rangeCity, -rangeCityA, -rangeHwy, -rangeHwyA, -trany, -UCity, -UCityA, -UHighway, -UHighwayA, -youSaveSpend,
-         -guzzler, -trans_dscr, -tCharger, -sCharger, -atvType, -fuelType2, -rangeA, -evMotor, -startStop, -phevCity, -phevHwy)
- 
-
-colnames(fuel_economy)
+Total_Rainfall_df <- Total_Rainfall_df %>% distinct()
+Total_Degrees_df <- Total_Degrees_df %>% distinct()
+Total_Sunshine_df <- Total_Sunshine_df %>% distinct()
 
 
-fuel_economy <- fuel_economy %>%
-  select(-co2TailpipeAGpm, -mfrCode, -c240Dscr, -charge240b, -c240bDscr, -createdOn, -modifiedOn)
+Total_Rainfall_df <- Total_Rainfall_df %>%
+  rename(Rainfall_Stat = `Statistic Label`, Rainfall_Value = VALUE)
 
-colnames(fuel_economy)
+Total_Degrees_df <- Total_Degrees_df %>%
+  rename(Degrees_Stat = `Statistic Label`, Degrees_Value = VALUE)
 
-fuel_economy <- fuel_economy %>%
-  drop_na()
- 
-vehicle_registrations <- vehicle_registrations %>%
-  # Remove rows with NA 
-  drop_na()
+Total_Sunshine_df <- Total_Sunshine_df %>%
+  rename(Sunshine_Stat = `Statistic Label`, Sunshine_Value = VALUE)
 
-colnames(fuel_economy)
-colnames(usa_cars)
-colnames(vehicle_registrations)
 
-usa_cars <- usa_cars %>%
-  rename(Year = year)
 
-combined_data <- usa_cars %>%
-  inner_join(fuel_economy, by = c("Year")) %>%
-  inner_join(vehicle_registrations, by = "Year")
+Total_Rainfall_df <- Total_Rainfall_df %>%
+  select(-STATISTIC, -`TLIST(M1)`, -C02431V02938, -UNIT)
+Total_Sunshine_df <- Total_Sunshine_df %>%
+  select(-STATISTIC, -`TLIST(M1)`, -C02431V02938, -UNIT)
+Total_Degrees_df <- Total_Degrees_df %>%
+  select(-STATISTIC, -`TLIST(M1)`, -C02431V02938, -UNIT)
 
-glimpse(combined_data)
-summary(combined_data)
-combined_data <- combined_data %>%
-  select(-...1)
-  
-colnames(combined_data)
 
-combined_data
+colnames(Total_Rainfall_df)
+colnames(Total_Sunshine_df)
+colnames(Total_Degrees_df)
+
+glimpse(Total_Rainfall_df)
+glimpse(Total_Sunshine_df)
+glimpse(Total_Degrees_df)
+
+summary(Total_Rainfall_df)
+summary(Total_Sunshine_df)
+summary(Total_Degrees_df)
+
+Total_Rainfall_df <- Total_Rainfall_df %>%
+  filter(!(Month >= "1958M01" & Month <= "1990M12"))
+
+Total_Sunshine_df <- Total_Sunshine_df %>%
+  filter(!(Month >= "1958M01" & Month <= "1990M12"))
+
+Total_Degrees_df <- Total_Degrees_df %>%
+  filter(!(Month >= "1958M01" & Month <= "1990M12"))
+
+Total_Degrees_df <- Total_Degrees_df %>%
+  filter(grepl("mean temperature", Degrees_Stat, ignore.case = TRUE))
+
+
+Total_Sunshine_df <- Total_Sunshine_df %>%
+  filter(grepl("Total Sunshine Hours", Sunshine_Stat, ignore.case = TRUE))
+
+
+Total_Rainfall_df <- Total_Rainfall_df %>%
+  filter(grepl("Total Rainfall", Rainfall_Stat, ignore.case = TRUE))
+
+
+
+summary(Total_Rainfall_df)
+summary(Total_Sunshine_df)
+summary(Total_Degrees_df)
+
+glimpse(Total_Rainfall_df)
+glimpse(Total_Sunshine_df)
+glimpse(Total_Degrees_df)
+
+
+
+merged_df <- merge(Total_Rainfall_df, Total_Sunshine_df, by = c("Month","Meteorological Weather Station"))
+
+merged_df <- merge(merged_df, Total_Degrees_df, by = c("Month","Meteorological Weather Station"))
+
+merged_df <- merged_df %>%
+  select(Month, 
+         `Meteorological Weather Station`,
+         Rainfall_Stat,
+         Rainfall_Value,  
+         Sunshine_Stat,
+         Sunshine_Value,  
+         Degrees_Stat,
+         Degrees_Value)     

@@ -18,13 +18,14 @@ Total_Sunshine_df <- Total_Sunshine_df %>% distinct()
 
 
 Total_Rainfall_df <- Total_Rainfall_df %>%
-  rename(Rainfall_Stat = `Statistic Label`, Rainfall_Value = VALUE)
+  rename(Rainfall_Stat = `Statistic Label`, Rainfall_Value = VALUE, Weather_Station = `Meteorological Weather Station` )
 
 Total_Degrees_df <- Total_Degrees_df %>%
-  rename(Degrees_Stat = `Statistic Label`, Degrees_Value = VALUE)
+  rename(Degrees_Stat = `Statistic Label`, Degrees_Value = VALUE, Weather_Station = `Meteorological Weather Station`)
 
 Total_Sunshine_df <- Total_Sunshine_df %>%
-  rename(Sunshine_Stat = `Statistic Label`, Sunshine_Value = VALUE)
+  rename(Sunshine_Stat = `Statistic Label`, Sunshine_Value = VALUE, Weather_Station = `Meteorological Weather Station`)
+
 
 
 
@@ -80,16 +81,76 @@ glimpse(Total_Degrees_df)
 
 
 
-merged_df <- merge(Total_Rainfall_df, Total_Sunshine_df, by = c("Month","Meteorological Weather Station"))
+merged_df <- merge(Total_Rainfall_df, Total_Sunshine_df, by = c("Month","Weather_Station"))
 
-merged_df <- merge(merged_df, Total_Degrees_df, by = c("Month","Meteorological Weather Station"))
+merged_df <- merge(merged_df, Total_Degrees_df, by = c("Month","Weather_Station"))
+
+
+merged_df$Month <- as.character(merged_df$Month)
+
+
+merged_df$Year <- substr(merged_df$Month, 1, 4)
+
+merged_df$Month <- as.character(merged_df$Month)
+
+
+merged_df$Month <- substr(merged_df$Month, 6, 7)
+
 
 merged_df <- merged_df %>%
-  select(Month, 
-         `Meteorological Weather Station`,
+  select(Year, Month, 
+         Weather_Station,
          Rainfall_Stat,
          Rainfall_Value,  
          Sunshine_Stat,
          Sunshine_Value,  
          Degrees_Stat,
          Degrees_Value)     
+
+
+
+
+ggplot(merged_df, aes(x = Year, y = Degrees_Value)) +
+  geom_boxplot(fill = "blue", color = "black") +
+  labs(title = "Distribution of Degrees Value Across Years") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(merged_df, aes(x = Rainfall_Value)) +
+  geom_histogram(binwidth = 5, fill = "blue", color = "black") +
+  facet_wrap(~ Year) +
+  labs(title = "Distribution of Rainfall Value by Year") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+ggplot(merged_df, aes(x = Sunshine_Value, fill = Weather_Station)) +
+  geom_histogram(binwidth = 5, color = "black") +
+  labs(title = "Distribution of Sunshine Value by Meteorological Weather Station") +
+  theme(legend.position = "bottom") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+ggplot(merged_df, aes(x = Month, y = Degrees_Value, fill = Month)) +
+  geom_boxplot() +
+  facet_wrap(~ Year) +
+  labs(title = "Distribution of Degrees Value Across Months, by Year") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+quantiles <- quantile(merged_df$Rainfall_Value, probs = c(0.33, 0.67))
+
+merged_df <- merged_df %>%
+  mutate(Rainfall_Classification = case_when(
+    Rainfall_Value <= quantiles[1] ~ "green",
+    Rainfall_Value > quantiles[1] & Rainfall_Value <= quantiles[2] ~ "yellow",
+    TRUE ~ "red"
+  ))
+
+head(merged_df)
+
+
+ggplot(merged_df, aes(x = Month, y = Rainfall_Value, fill = Rainfall_Classification)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("red" = "red", "yellow" = "yellow", "green" = "green")) +
+  labs(title = "Rainfall Value by Month with Rainfall Classification", x = "Month", y = "Rainfall Value") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))

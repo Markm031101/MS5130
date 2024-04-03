@@ -1,22 +1,62 @@
-library(tidyverse)
+---
+title: "MS5130 Assignment 3"
+author: "Mark Moran, 20333896"
+format: html
+editor: visual
+---
 
+{r}
+library(plotly)
+library(leaflet)
+library(tidyverse)
+library(sf)
+
+{r}
 Total_Rainfall_df <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Total_Rainfall.csv")
 Total_Sunshine_df <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Total_Sunshine.csv")
 Total_Degrees_df <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Total_Degrees.csv")
+Station_Coords_df <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Weather_stations.csv")
 
+Mermaid Flowchart for merging
+
+flowchart TD Total_Rainfall_df[/Total_Rainfall.csv/]
+
+Total_Sunshine_df[/Total_Sunshine.csv/]
+
+Total_Degrees_df[/Total_Degrees.csv/]
+
+Station_Coords_df[/Weather_stations.csv/]
+
+merged_df_Rainfal_Sunshine[(Rainfall_Sunshine_Merged)]
+
+merged_df{"Merged_df"}
+
+Total_Rainfall_df --> Total_Sunshine_df
+
+Total_Sunshine_df --> merged_df_Rainfal_Sunshine
+
+merged_df_Rainfal_Sunshine --> Total_Degrees_df
+
+Total_Degrees_df --> merged_df
+
+Station_Coords_df --> merged_df
+
+{r}
 colnames(Total_Rainfall_df)
 colnames(Total_Sunshine_df)
 colnames(Total_Degrees_df)
 
+{r}
 Total_Rainfall_df <- Total_Rainfall_df %>% drop_na()
 Total_Degrees_df <- Total_Degrees_df %>% drop_na()
 Total_Sunshine_df <- Total_Sunshine_df %>% drop_na()
 
+{r}
 Total_Rainfall_df <- Total_Rainfall_df %>% distinct()
 Total_Degrees_df <- Total_Degrees_df %>% distinct()
 Total_Sunshine_df <- Total_Sunshine_df %>% distinct()
 
-
+{r}
 Total_Rainfall_df <- Total_Rainfall_df %>%
   rename(Rainfall_Stat = `Statistic Label`, Rainfall_Value = VALUE, Weather_Station = `Meteorological Weather Station` )
 
@@ -26,9 +66,7 @@ Total_Degrees_df <- Total_Degrees_df %>%
 Total_Sunshine_df <- Total_Sunshine_df %>%
   rename(Sunshine_Stat = `Statistic Label`, Sunshine_Value = VALUE, Weather_Station = `Meteorological Weather Station`)
 
-
-
-
+{r}
 Total_Rainfall_df <- Total_Rainfall_df %>%
   select(-STATISTIC, -`TLIST(M1)`, -C02431V02938, -UNIT)
 Total_Sunshine_df <- Total_Sunshine_df %>%
@@ -36,19 +74,7 @@ Total_Sunshine_df <- Total_Sunshine_df %>%
 Total_Degrees_df <- Total_Degrees_df %>%
   select(-STATISTIC, -`TLIST(M1)`, -C02431V02938, -UNIT)
 
-
-colnames(Total_Rainfall_df)
-colnames(Total_Sunshine_df)
-colnames(Total_Degrees_df)
-
-glimpse(Total_Rainfall_df)
-glimpse(Total_Sunshine_df)
-glimpse(Total_Degrees_df)
-
-summary(Total_Rainfall_df)
-summary(Total_Sunshine_df)
-summary(Total_Degrees_df)
-
+{r}
 Total_Rainfall_df <- Total_Rainfall_df %>%
   filter(!(Month >= "1958M01" & Month <= "1990M12"))
 
@@ -69,8 +95,28 @@ Total_Sunshine_df <- Total_Sunshine_df %>%
 Total_Rainfall_df <- Total_Rainfall_df %>%
   filter(grepl("Total Rainfall", Rainfall_Stat, ignore.case = TRUE))
 
+{r}
+Total_Rainfall_df <- Total_Rainfall_df %>%
+  filter(!(Month >= "1958M01" & Month <= "1990M12"))
+
+Total_Sunshine_df <- Total_Sunshine_df %>%
+  filter(!(Month >= "1958M01" & Month <= "1990M12"))
+
+Total_Degrees_df <- Total_Degrees_df %>%
+  filter(!(Month >= "1958M01" & Month <= "1990M12"))
+
+Total_Degrees_df <- Total_Degrees_df %>%
+  filter(grepl("mean temperature", Degrees_Stat, ignore.case = TRUE))
 
 
+Total_Sunshine_df <- Total_Sunshine_df %>%
+  filter(grepl("Total Sunshine Hours", Sunshine_Stat, ignore.case = TRUE))
+
+
+Total_Rainfall_df <- Total_Rainfall_df %>%
+  filter(grepl("Total Rainfall", Rainfall_Stat, ignore.case = TRUE))
+
+{r}
 summary(Total_Rainfall_df)
 summary(Total_Sunshine_df)
 summary(Total_Degrees_df)
@@ -79,13 +125,12 @@ glimpse(Total_Rainfall_df)
 glimpse(Total_Sunshine_df)
 glimpse(Total_Degrees_df)
 
+{r}
+merged_df_Rainfal_Sunshine <- merge(Total_Rainfall_df, Total_Sunshine_df, by = c("Month","Weather_Station"))
 
+merged_df <- merge(merged_df_Rainfal_Sunshine, Total_Degrees_df, by = c("Month","Weather_Station"))
 
-merged_df <- merge(Total_Rainfall_df, Total_Sunshine_df, by = c("Month","Weather_Station"))
-
-merged_df <- merge(merged_df, Total_Degrees_df, by = c("Month","Weather_Station"))
-
-
+{r}
 merged_df$Month <- as.character(merged_df$Month)
 
 
@@ -98,59 +143,153 @@ merged_df$Month <- substr(merged_df$Month, 6, 7)
 
 
 merged_df <- merged_df %>%
-  select(Year, Month, 
-         Weather_Station,
-         Rainfall_Stat,
-         Rainfall_Value,  
-         Sunshine_Stat,
-         Sunshine_Value,  
-         Degrees_Stat,
-         Degrees_Value)     
+  select(Year, Month, Weather_Station, Rainfall_Stat, Rainfall_Value, Sunshine_Stat, Sunshine_Value,  Degrees_Stat, Degrees_Value) 
+
+merged_df$Year <- as.numeric(as.character(merged_df$Year))
+
+{r}
+Rainfall_model <- lm(Rainfall_Value ~ Year, data = merged_df)
+
+summary(Rainfall_model)
+
+Rainfall_2032 <- data.frame(Year  = (max(merged_df$Year) + 1) : (max(merged_df$Year) + 10 ))
+
+Rainfall_2032$Rainfall_Prediction <- predict(Rainfall_model, newdata = Rainfall_2032)
+
+print(Rainfall_2032)
 
 
 
+merged_df$Type <- "Historical"
+Rainfall_2032$Type <- "Forecasted"
 
-ggplot(merged_df, aes(x = Year, y = Degrees_Value)) +
-  geom_boxplot(fill = "blue", color = "black") +
-  labs(title = "Distribution of Degrees Value Across Years") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+Rainfall_2032$Rainfall_Value <- Rainfall_2032$Rainfall_Prediction
 
-ggplot(merged_df, aes(x = Rainfall_Value)) +
-  geom_histogram(binwidth = 5, fill = "blue", color = "black") +
-  facet_wrap(~ Year) +
-  labs(title = "Distribution of Rainfall Value by Year") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+combined_data <- rbind(
+  merged_df %>% select(Year, Rainfall_Value, Type),
+  Rainfall_2032 %>% select(Year, Rainfall_Value, Type))
 
+Forecasted_Rainfall <- plot_ly(data = combined_data, x = ~Year, y = ~Rainfall_Value, color = ~Type, type = 'scatter', mode = 'lines+markers') %>%
+  layout(title = "Historical and Forecasted Rainfall Values",
+         xaxis = list(title = "Year"),
+         yaxis = list(title = "Rainfall Value"))
+Forecasted_Rainfall
 
-ggplot(merged_df, aes(x = Sunshine_Value, fill = Weather_Station)) +
-  geom_histogram(binwidth = 5, color = "black") +
-  labs(title = "Distribution of Sunshine Value by Meteorological Weather Station") +
-  theme(legend.position = "bottom") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+{r}
+Average_Rainfall <- merged_df %>%
+  group_by(Year) %>%
+  summarise(Average_Rainfall = mean(Rainfall_Value, na.rm = TRUE))
 
+print(Average_Rainfall)
 
-ggplot(merged_df, aes(x = Month, y = Degrees_Value, fill = Month)) +
-  geom_boxplot() +
-  facet_wrap(~ Year) +
-  labs(title = "Distribution of Degrees Value Across Months, by Year") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-
-
+{r}
 quantiles <- quantile(merged_df$Rainfall_Value, probs = c(0.33, 0.67))
 
 merged_df <- merged_df %>%
   mutate(Rainfall_Classification = case_when(
     Rainfall_Value <= quantiles[1] ~ "green",
+    
     Rainfall_Value > quantiles[1] & Rainfall_Value <= quantiles[2] ~ "yellow",
-    TRUE ~ "red"
-  ))
+    TRUE ~ "red"))
 
-head(merged_df)
+{r}
+quantiles <- quantile(merged_df$Sunshine_Value, probs = c(0.33, 0.67))
+
+merged_df <- merged_df %>%
+  mutate(Sunshine_Classification = case_when(
+    Sunshine_Value <= quantiles[1] ~ "red",
+    Sunshine_Value > quantiles[1] & Sunshine_Value <= quantiles[2] ~ "yellow",
+    TRUE ~ "green"))
+
+{r}
+quantiles <- quantile(merged_df$Degrees_Value, probs = c(0.33, 0.67))
+
+merged_df <- merged_df %>%
+  mutate(Degrees_Classification = case_when(
+    Degrees_Value <= quantiles[1] ~ "red",
+    Degrees_Value > quantiles[1] & Degrees_Value <= quantiles[2] ~ "yellow",
+    TRUE ~ "green"))
+
+{r}
+merged_df <- merged_df %>%
+  select(Year, Month, Weather_Station, Rainfall_Stat, Rainfall_Value, Rainfall_Classification, Sunshine_Stat, Sunshine_Value, Sunshine_Classification, Degrees_Stat, Degrees_Value, Degrees_Classification)
+
+{r}
+merged_df<- merge(merged_df, Station_Coords_df, by="Weather_Station" )
+
+merged_df_sf <- st_as_sf(merged_df, coords = c("Longitude", "Latitude"), crs = 4326, agr = "constant")
+
+{r}
+leaflet(merged_df) %>%
+  addTiles() %>%  # Add default background map
+  addCircleMarkers(~Longitude, ~Latitude, color = ~case_when(
+    Degrees_Classification == "red" ~ "red",
+    Degrees_Classification == "yellow" ~ "yellow",
+    Degrees_Classification == "green" ~ "green",
+    TRUE ~ "black"  # Default color
+  ),
+  popup = ~paste("Degrees Classification:", Sunshine_Value, Sunshine_Stat, Weather_Station),
+  radius = 30  # Adjust marker size
+  ) %>%
+  addLegend("bottomright", 
+            colors = c("green", "yellow", "red"), 
+            labels = c("High", "Medium", "Low"), 
+            title = "Degrees Classification")
+
+{r}
+leaflet(merged_df) %>%
+  addTiles() %>%  # Add default background map
+  addCircleMarkers(~Longitude, ~Latitude, color = ~case_when(
+    Sunshine_Classification == "red" ~ "red",
+    Sunshine_Classification == "yellow" ~ "yellow",
+    Sunshine_Classification == "green" ~ "green",
+    TRUE ~ "black"  # Default color
+  ),
+  popup = ~paste("Sunshine Classification:", Degrees_Value, Degrees_Stat, Weather_Station),
+  radius = 30) %>%
+  addLegend("bottomright", colors = c("green", "yellow", "red"), labels = c("High", "Medium", "Low"), title = "Sunshine Classification")
+
+{r}
+leaflet(merged_df) %>%
+  addTiles() %>%  
+  addCircleMarkers(~Longitude, ~Latitude, color = ~case_when(
+    Rainfall_Classification == "red" ~ "red",
+    Rainfall_Classification == "yellow" ~ "yellow",
+    Rainfall_Classification == "green" ~ "green",
+    TRUE ~ "black"  # Default color
+  ),
+  popup = ~paste("Rainfall Classification:", Rainfall_Value, Rainfall_Stat, Weather_Station),
+  radius = 30  ) %>%
+  addLegend("bottomright", 
+            colors = c("red", "yellow", "green"), 
+            labels = c("High", "Medium", "Low"), 
+            title = "Rainfall Classification")
+
+{r}
+Rainfall_Graph <- plot_ly(merged_df, x = ~Year, y = ~Rainfall_Value, type = 'scatter', mode = 'markers',
+               hoverinfo = 'text',
+               text = ~paste('X:', Year, 'Y:', Rainfall_Value)) %>%
+  layout(title = 'Scatter Plot of Rainfall Value vs Year',
+         xaxis = list(title = 'Year'),
+         yaxis = list(title = 'Rainfall Value'))
+Rainfall_Graph
 
 
-ggplot(merged_df, aes(x = Month, y = Rainfall_Value, fill = Rainfall_Classification)) +
-  geom_boxplot() +
-  scale_fill_manual(values = c("red" = "red", "yellow" = "yellow", "green" = "green")) +
-  labs(title = "Rainfall Value by Month with Rainfall Classification", x = "Month", y = "Rainfall Value") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+{r}
+Sunshine_Graph<- plot_ly(merged_df, x = ~Weather_Station, y = ~Sunshine_Value, type = 'bar') %>%
+  layout(title = 'Bar Chart of Sunshine Value by Weather Station',
+         xaxis = list(title = 'Weather Station'),
+         yaxis = list(title = 'Sunshine Value'),
+         barmode = 'group')
+Sunshine_Graph
+
+
+{r}
+Degrees_Graph <- plot_ly(merged_df, x = ~Weather_Station, y = ~Degrees_Value, type = 'bar',
+               hoverinfo = 'text',
+               text = ~paste('Time:', Weather_Station, 'Value:', Degrees_Value)) %>%
+  layout(title = 'Line Chart of Value Over Years',
+         xaxis = list(title = 'Weather Station'),
+         yaxis = list(title = 'Degrees Value'))
+Degrees_Graph
+

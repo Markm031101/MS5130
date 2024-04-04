@@ -1,31 +1,166 @@
 ---
 title: "MS5130 Assignment 3"
 author: "Mark Moran, 20333896"
-format: html
+format:
+  html:
+    embed-resources: true
 editor: visual
 ---
 
-{r}
+Introduction
+
+In this analysis, I will explore weather data using R, focusing on key variables such as rainfall, sunshine, and temperature, alongside the geographical coordinates of weather stations. The initial steps involved importing and cleaning the data to ensure a solid foundation for my analysis. Following this, I merged these datasets and enhanced them by categorising weather metrics into meaningful classes, allowing for a nuanced understanding of weather patterns.
+
+My subsequent analyses included crafting visualisations to illustrate trends and variances in weather phenomena over time and across different locations. I utilised a range of tools, including scatter plots, bar charts, and a word cloud, to provide both quantitative and qualitative insights. Furthermore, I applied a multinomial logistic regression model to predict rainfall categories, adding a predictive dimension to the analysis.
+
+This thorough approach not only streamlined the data for enhanced analysis but also revealed intricate relationships and trends within the weather parameters, offering a multifaceted perspective on the climatic conditions represented in the datasets. Through this process, I gained valuable insights into the variability and influencing factors of weather, demonstrating the potency of statistical and visual analysis in deciphering complex environmental data.
+
+Analysis
+
+Importing R Libraries
+
+In this section, I have imported a variety of R libraries to enhance my data analysis and visualisation capabilities. By integrating libraries such as plotly and leaflet, I've enabled interactive charting and mapping, allowing for a more in depth exploration of data. The tidyverse library is known for its data manipulation , alongside sf for handling spatial data, and these libraries have been instrumental in organising and preparing my datasets. I've also utilised wordcloud and wordcloud2 for textual data visualisation, creating informative representations of text in the datasets. The inclusion of tm and dpylr have further streamlined my data processing, ensuring efficient and tidy data management. Lastly, I imported the libraries randomForest and nnet for statistical analyses and neural network modelling.
+
+{r, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+
+# Importing neccessary libraries
+
 library(plotly)
 library(leaflet)
 library(tidyverse)
 library(sf)
+library(wordcloud)
+library(RColorBrewer)
+library(wordcloud2)
+library(tm)
+library(dplyr)
+library(randomForest)
+library(nnet)
 
-{r}
+Importing Weather Data into R
+
+In this section of the code, I've imported several datasets into R, each about different aspects of weather data. Specifically, I've loaded Total_Rainfall_df, Total_Sunshine_df, and Total_Degrees_df from their respective CSV files. These Datasets contain details on Rainfall, Sunshine, and Temperature Readings, which is essential for creating my analysis based on the weather patterns in Ireland. Additionally, I have imported a dataset for the geographical coordinates of each weather station, which is crucial for mapping the results using the leaflet library. By importing these Datasets I have now set the foundation for my exploration and anlaysis of the Irish weather patterns, using both statistical and visual representations of the weather data.
+
+{r, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+
+#importing Datasets from csv
+
 Total_Rainfall_df <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Total_Rainfall.csv")
 Total_Sunshine_df <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Total_Sunshine.csv")
 Total_Degrees_df <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Total_Degrees.csv")
 Station_Coords_df <- read_csv("C:/Users/markm/OneDrive/Desktop/Rsstudio/Weather_stations.csv")
 
+Data Preprocessing
+
+In this part of my analysis, I focused on refining the weather datasets to ensure the accuracy and reliability of my subsequent analysis. Initially, I inspected the column names of the data frames to understand the structure and type of data each one holds. This step is crucial as it helps in identifying the specific variables that are available for analysis in each dataset.
+
+{r, echo=TRUE, results='hide', message=FALSE, warning=FALSE}
+
+#Displaying column names
+
+colnames(Total_Rainfall_df)
+colnames(Total_Sunshine_df)
+colnames(Total_Degrees_df)
+
+I then focused on a data cleaning process to enhance the datasets' quality. I utilized the drop_na() function from the dpylr package on each of the three data frames. This step is instrumental in removing any rows with missing values across all columns, thereby ensuring that the analyses is based on complete cases and reducing the potential for bias or inaccuracies in the results.
+
+{r}
+
+#Removing Missing Values
+
+Total_Rainfall_df <- Total_Rainfall_df %>% drop_na()
+Total_Degrees_df <- Total_Degrees_df %>% drop_na()
+Total_Sunshine_df <- Total_Sunshine_df %>% drop_na()
+
+I then applied the distinct() function to each data frame. This function is essential in identifying and removing duplicate rows, ensuring that each data point is unique and preventing any bias or redundancy in the analysis. By performing these data preprocessing steps, I've significantly enhanced the integrity and reliability of the data, setting a solid foundation for an accurate and insightful exploration of the Irish weather patterns.
+
+{r}
+
+#Removing Duplicate Rows
+
+Total_Rainfall_df <- Total_Rainfall_df %>% distinct()
+Total_Degrees_df <- Total_Degrees_df %>% distinct()
+Total_Sunshine_df <- Total_Sunshine_df %>% distinct()
+
+In this phase of data refinement, I've streamlined the Total_Rainfall_df, Total_Degrees_df, and Total_Sunshine_df datasets by removing unnecessary columns. Specifically, I've excluded the STATISTIC, TLIST(M1), C02431V02938, and UNIT columns from each dataset. This step is crucial to focus the analysis on relevant data by eliminating columns that may not contribute valuable information or could potentially confuse me. By retaining only the essential columns, the datasets are now more concise, enhancing the clarity and efficiency of subsequent data handling and analysis processes.
+
+{r}
+
+#Dropping columnsn that i will not use
+
+Total_Rainfall_df <- Total_Rainfall_df %>%
+  select(-STATISTIC, -`TLIST(M1)`, -C02431V02938, -UNIT)
+Total_Sunshine_df <- Total_Sunshine_df %>%
+  select(-STATISTIC, -`TLIST(M1)`, -C02431V02938, -UNIT)
+Total_Degrees_df <- Total_Degrees_df %>%
+  select(-STATISTIC, -`TLIST(M1)`, -C02431V02938, -UNIT)
+
+Data Renaming for Clarity and Consistency
+
+I've renamed key columns in the rainfall, degrees, and sunshine datasets to enhance clarity and consistency throughout my analysis. By updating column names to more descriptive terms like Rainfall_Stat, Degrees_Stat, and Sunshine_Stat, and aligning value and station identifiers across datasets, I've significantly improved the interpretability of the data. This renaming ensures that I do not get confused later in the analysis as the names of columns are similar if not the same for each dataset therefore i can easily understand the type of weather data I are analyzing, facilitating a smoother and more intuitive data analysis process.
+
+{r}
+
+#renaming column names for clarity and consistency
+
+Total_Rainfall_df <- Total_Rainfall_df %>%
+  rename(Rainfall_Stat = `Statistic Label`, Rainfall_Value = VALUE, Weather_Station = `Meteorological Weather Station` )
+
+Total_Degrees_df <- Total_Degrees_df %>%
+  rename(Degrees_Stat = `Statistic Label`, Degrees_Value = VALUE, Weather_Station = `Meteorological Weather Station`)
+
+Total_Sunshine_df <- Total_Sunshine_df %>%
+  rename(Sunshine_Stat = `Statistic Label`, Sunshine_Value = VALUE, Weather_Station = `Meteorological Weather Station`)
+
+In this step of data preprocessing, I applied filtering to refine the time range and specific data points within the Total_Rainfall_df, Total_Sunshine_df, and Total_Degrees_dfdatasets. I removed entries from January 1958 to December 1990 to focus the analysis on more recent data. Additionally, within the Total_Degrees_df, I further filtered the data to include only entries that match "mean temperature" in the Degrees_Stat column, ensuring that the temperature analysis is consistent and based on average values I then did the same with the Total_Sunshine_df and the Total_Rainfall_df where i filtered out entries that did not match "Total Sunshine Hours" and "Total Rainfall" respectively. This selective filtering enhances the datasets relevance and precision, tailoring them to the specific analytical needs and ensuring that the subsequent analysis is grounded on pertinent and targeted data.
+
+{r}
+
+#Filtered out data that wont be used in the analysis
+
+Total_Rainfall_df <- Total_Rainfall_df %>%
+  filter(!(Month >= "1958M01" & Month <= "1990M12"))
+
+Total_Sunshine_df <- Total_Sunshine_df %>%
+  filter(!(Month >= "1958M01" & Month <= "1990M12"))
+
+Total_Degrees_df <- Total_Degrees_df %>%
+  filter(!(Month >= "1958M01" & Month <= "1990M12"))
+
+Total_Degrees_df <- Total_Degrees_df %>%
+  filter(grepl("mean temperature", Degrees_Stat, ignore.case = TRUE))
+
+
+Total_Sunshine_df <- Total_Sunshine_df %>%
+  filter(grepl("Total Sunshine Hours", Sunshine_Stat, ignore.case = TRUE))
+
+
+Total_Rainfall_df <- Total_Rainfall_df %>%
+  filter(grepl("Total Rainfall", Rainfall_Stat, ignore.case = TRUE))
+
+Merging Datasets
+
+In this stage of my data preparation, I merged the refined datasets to create a comprehensive merged weather dataset. Initially, I combined Total_Rainfall_df and Total_Sunshine_df based on their common columns, the Month and Weather_Station columns, creating a new dataset, merged_df_Rainfal_Sunshine. This dataset now encapsulates both the Total_Rainfall_df and Total_Sunshine_df data into one dataset. I then merged this combined dataset with Total_Degrees_df using the same keys, resulting in merged_df , a unified dataset that includes rainfall, sunshine, and degrees data. This merging process is vital for constructing a comprehensive view of the weather patterns, facilitating a multifaceted analysis by correlating different weather variables within the same timeframe and location. I merged these files togther on two separate occasions to ensure all data was merged correctly.
+
+{r}
+
+#Merging Datasets together to create one for anlysing
+
+merged_df_Rainfal_Sunshine <- merge(Total_Rainfall_df, Total_Sunshine_df, by = c("Month","Weather_Station"))
+
+merged_df <- merge(merged_df_Rainfal_Sunshine, Total_Degrees_df, by = c("Month","Weather_Station"))
+
 Mermaid Flowchart for merging
 
-flowchart TD Total_Rainfall_df[/Total_Rainfall.csv/]
+In this flowchart diagram, I outlined the workflow of merging the weather datasets into a single, comprehensive dataset. The process begins with three separate datasets: Total_Rainfall.csv, Total_Sunshine.csv, and Total_Degrees.csv. Initially, Total_Rainfall_df and Total_Sunshine_df are merged to create the merged_df_Rainfal_Sunshine dataset, which combines the rainfall and sunshine data. Following this, the merged_df_Rainfal_Sunshine dataset is further merged with Total_Degrees_df, resulting in merged_df. This final dataset, merged_df, merges all of the dataset of weather data, including rainfall, sunshine, and temperature, all aligned by month and weather station. This workflow demonstrates the structured approach taken to consolidate weather metrics into a unified resource for in-depth analysis.
+
+flowchart TD
+
+Total_Rainfall_df[/Total_Rainfall.csv/]
 
 Total_Sunshine_df[/Total_Sunshine.csv/]
 
 Total_Degrees_df[/Total_Degrees.csv/]
-
-Station_Coords_df[/Weather_stations.csv/]
 
 merged_df_Rainfal_Sunshine[(Rainfall_Sunshine_Merged)]
 
@@ -39,98 +174,14 @@ merged_df_Rainfal_Sunshine --> Total_Degrees_df
 
 Total_Degrees_df --> merged_df
 
-Station_Coords_df --> merged_df
+Refining Dataset Structure for Enhanced Usability and Analysis
+
+In this snippet of code, I've made several adjustments to the merged_df dataset to refine its structure and ensure the data is formatted correctly for analysis. Firstly, I converted the Month column to a character type and then extracted the month part, knowing the Month data was in a 'YYYYMM' format. This alteration provides a clearer representation of the monthly data. Similarly, I addressed the Year column, ensuring it's numeric and extracting the year part from the Month column.
 
 {r}
-colnames(Total_Rainfall_df)
-colnames(Total_Sunshine_df)
-colnames(Total_Degrees_df)
 
-{r}
-Total_Rainfall_df <- Total_Rainfall_df %>% drop_na()
-Total_Degrees_df <- Total_Degrees_df %>% drop_na()
-Total_Sunshine_df <- Total_Sunshine_df %>% drop_na()
+#Adjustemnts to merged_df to refine  the structure 
 
-{r}
-Total_Rainfall_df <- Total_Rainfall_df %>% distinct()
-Total_Degrees_df <- Total_Degrees_df %>% distinct()
-Total_Sunshine_df <- Total_Sunshine_df %>% distinct()
-
-{r}
-Total_Rainfall_df <- Total_Rainfall_df %>%
-  rename(Rainfall_Stat = `Statistic Label`, Rainfall_Value = VALUE, Weather_Station = `Meteorological Weather Station` )
-
-Total_Degrees_df <- Total_Degrees_df %>%
-  rename(Degrees_Stat = `Statistic Label`, Degrees_Value = VALUE, Weather_Station = `Meteorological Weather Station`)
-
-Total_Sunshine_df <- Total_Sunshine_df %>%
-  rename(Sunshine_Stat = `Statistic Label`, Sunshine_Value = VALUE, Weather_Station = `Meteorological Weather Station`)
-
-{r}
-Total_Rainfall_df <- Total_Rainfall_df %>%
-  select(-STATISTIC, -`TLIST(M1)`, -C02431V02938, -UNIT)
-Total_Sunshine_df <- Total_Sunshine_df %>%
-  select(-STATISTIC, -`TLIST(M1)`, -C02431V02938, -UNIT)
-Total_Degrees_df <- Total_Degrees_df %>%
-  select(-STATISTIC, -`TLIST(M1)`, -C02431V02938, -UNIT)
-
-{r}
-Total_Rainfall_df <- Total_Rainfall_df %>%
-  filter(!(Month >= "1958M01" & Month <= "1990M12"))
-
-Total_Sunshine_df <- Total_Sunshine_df %>%
-  filter(!(Month >= "1958M01" & Month <= "1990M12"))
-
-Total_Degrees_df <- Total_Degrees_df %>%
-  filter(!(Month >= "1958M01" & Month <= "1990M12"))
-
-Total_Degrees_df <- Total_Degrees_df %>%
-  filter(grepl("mean temperature", Degrees_Stat, ignore.case = TRUE))
-
-
-Total_Sunshine_df <- Total_Sunshine_df %>%
-  filter(grepl("Total Sunshine Hours", Sunshine_Stat, ignore.case = TRUE))
-
-
-Total_Rainfall_df <- Total_Rainfall_df %>%
-  filter(grepl("Total Rainfall", Rainfall_Stat, ignore.case = TRUE))
-
-{r}
-Total_Rainfall_df <- Total_Rainfall_df %>%
-  filter(!(Month >= "1958M01" & Month <= "1990M12"))
-
-Total_Sunshine_df <- Total_Sunshine_df %>%
-  filter(!(Month >= "1958M01" & Month <= "1990M12"))
-
-Total_Degrees_df <- Total_Degrees_df %>%
-  filter(!(Month >= "1958M01" & Month <= "1990M12"))
-
-Total_Degrees_df <- Total_Degrees_df %>%
-  filter(grepl("mean temperature", Degrees_Stat, ignore.case = TRUE))
-
-
-Total_Sunshine_df <- Total_Sunshine_df %>%
-  filter(grepl("Total Sunshine Hours", Sunshine_Stat, ignore.case = TRUE))
-
-
-Total_Rainfall_df <- Total_Rainfall_df %>%
-  filter(grepl("Total Rainfall", Rainfall_Stat, ignore.case = TRUE))
-
-{r}
-summary(Total_Rainfall_df)
-summary(Total_Sunshine_df)
-summary(Total_Degrees_df)
-
-glimpse(Total_Rainfall_df)
-glimpse(Total_Sunshine_df)
-glimpse(Total_Degrees_df)
-
-{r}
-merged_df_Rainfal_Sunshine <- merge(Total_Rainfall_df, Total_Sunshine_df, by = c("Month","Weather_Station"))
-
-merged_df <- merge(merged_df_Rainfal_Sunshine, Total_Degrees_df, by = c("Month","Weather_Station"))
-
-{r}
 merged_df$Month <- as.character(merged_df$Month)
 
 
@@ -141,48 +192,23 @@ merged_df$Month <- as.character(merged_df$Month)
 
 merged_df$Month <- substr(merged_df$Month, 6, 7)
 
+I reorganised the dataset by selecting and ordering the columns to present the data logically, starting with Year and Month, followed by the Weather_Station, and then the respective statistics and values for rainfall, sunshine, and degrees. This reordering creates a clearer data structure, facilitating readability and analysis. This step enhances the dataset's usability, ensuring that the key variables are readily accessible and logically presented for subsequent analyses.
+
+{r}
+
+#Organised the merged_df foor easier readability
 
 merged_df <- merged_df %>%
   select(Year, Month, Weather_Station, Rainfall_Stat, Rainfall_Value, Sunshine_Stat, Sunshine_Value,  Degrees_Stat, Degrees_Value) 
 
-merged_df$Year <- as.numeric(as.character(merged_df$Year))
+Classification of Rainfall Values
+
+In this code snippet, I've categorized the Rainfall_Value in merged_df into three classes based on its quantiles. By calculating the 33rd and 67th percentiles of Rainfall_Value, I created two thresholds to segment the data into "green" (low rainfall), "yellow" (moderate rainfall), and "red" (high rainfall) categories. This classification is intuitive, allowing for a straightforward visual interpretation of rainfall levels across different time periods and locations, with "green" indicating lower than usual rainfall, "yellow" indicating moderate levels, and "red" suggesting higher than usual rainfall.
 
 {r}
-Rainfall_model <- lm(Rainfall_Value ~ Year, data = merged_df)
 
-summary(Rainfall_model)
+#Categorising Rainfall_value intoo three classes
 
-Rainfall_2032 <- data.frame(Year  = (max(merged_df$Year) + 1) : (max(merged_df$Year) + 10 ))
-
-Rainfall_2032$Rainfall_Prediction <- predict(Rainfall_model, newdata = Rainfall_2032)
-
-print(Rainfall_2032)
-
-
-
-merged_df$Type <- "Historical"
-Rainfall_2032$Type <- "Forecasted"
-
-Rainfall_2032$Rainfall_Value <- Rainfall_2032$Rainfall_Prediction
-
-combined_data <- rbind(
-  merged_df %>% select(Year, Rainfall_Value, Type),
-  Rainfall_2032 %>% select(Year, Rainfall_Value, Type))
-
-Forecasted_Rainfall <- plot_ly(data = combined_data, x = ~Year, y = ~Rainfall_Value, color = ~Type, type = 'scatter', mode = 'lines+markers') %>%
-  layout(title = "Historical and Forecasted Rainfall Values",
-         xaxis = list(title = "Year"),
-         yaxis = list(title = "Rainfall Value"))
-Forecasted_Rainfall
-
-{r}
-Average_Rainfall <- merged_df %>%
-  group_by(Year) %>%
-  summarise(Average_Rainfall = mean(Rainfall_Value, na.rm = TRUE))
-
-print(Average_Rainfall)
-
-{r}
 quantiles <- quantile(merged_df$Rainfall_Value, probs = c(0.33, 0.67))
 
 merged_df <- merged_df %>%
@@ -192,7 +218,14 @@ merged_df <- merged_df %>%
     Rainfall_Value > quantiles[1] & Rainfall_Value <= quantiles[2] ~ "yellow",
     TRUE ~ "red"))
 
+Sunshine Value Classification
+
+In the second snippet, I applied a similar classification approach to Sunshine_Value, but with inverted color codes due to the positive nature of sunshine. Here, "red" denotes low sunshine, "yellow" indicates moderate sunshine, and "green" represents high sunshine. This segmentation is also based on the 33rd and 67th percentiles, and facilitates an easy-to-understand categorization, helping to quickly identify areas or times with varying levels of sunshine exposure.
+
 {r}
+
+#Categorising Sunshine_Value intoo three classes
+
 quantiles <- quantile(merged_df$Sunshine_Value, probs = c(0.33, 0.67))
 
 merged_df <- merged_df %>%
@@ -201,7 +234,14 @@ merged_df <- merged_df %>%
     Sunshine_Value > quantiles[1] & Sunshine_Value <= quantiles[2] ~ "yellow",
     TRUE ~ "green"))
 
+Degrees Value Classification
+
+In this last snippet of code, I classified Degrees_Value into "red" (low temperature), "yellow" (moderate temperature), and "green" (high temperature) based on the same quantile thresholds. This classification enables a visual and analytical interpretation of temperature distributions, aiding in the identification of patterns or anomalies in temperature data across different regions and times.
+
 {r}
+
+#Categorising Degrees_Value intoo three classes
+
 quantiles <- quantile(merged_df$Degrees_Value, probs = c(0.33, 0.67))
 
 merged_df <- merged_df %>%
@@ -210,62 +250,111 @@ merged_df <- merged_df %>%
     Degrees_Value > quantiles[1] & Degrees_Value <= quantiles[2] ~ "yellow",
     TRUE ~ "green"))
 
+Restructuring of Dataset
+
+In this code snippet, i Irefined the merged_df again as i have since added more columns to the merged_df. This selection process ensures that the dataset is streamlined and contains only the most relevant columns for further anlysis, While also including the new categories in a way that facilitates readability.
+
 {r}
+
+#restructuring merged_df again for easier readbility
+
 merged_df <- merged_df %>%
   select(Year, Month, Weather_Station, Rainfall_Stat, Rainfall_Value, Rainfall_Classification, Sunshine_Stat, Sunshine_Value, Sunshine_Classification, Degrees_Stat, Degrees_Value, Degrees_Classification)
 
+Merging in Longitude and Latitude for the Weather Stations
+
+I've further enhanced the merged_df dataset by merging it with Station_Coords_df based on the Weather_Station column. This merge integrates geographical coordinates with the existing weather data, providing spatial context to the weather observations. The Longitudeand Latitudefields from Station_Coords_dfare now part of merged_df, enabling geospatial analyses and visualizations. Following the merge, I converted the enhanced merged_df into a spatial dataframe, merged_df_sf , using the st_as_sf function. This function transforms the dataframe into a spatial object, with Longitude and Latitude serving as coordinate references and specifying the CRS as 4326, which is the standard for geographical coordinates.
+
 {r}
+
+# Merging the Longitude and Latitude into the merged_df to enable the leeaflet library
+
 merged_df<- merge(merged_df, Station_Coords_df, by="Weather_Station" )
 
 merged_df_sf <- st_as_sf(merged_df, coords = c("Longitude", "Latitude"), crs = 4326, agr = "constant")
 
+Mermaid Flowchart for merging
+
+In this flowchart, I've illustrated the process of integrating the Station_Coords_df dataset, which is likely sourced from Weather_stations.csv, with the existing merged_df dataset. The arrow from Station_Coords_df to merged_df signifies the merging action, where I've combined weather station geographical coordinates (latitude and longitude) with the comprehensive weather data in merged_df. This integration enriches the merged_df with spatial context, enabling geospatial analyses and visualizations that correlate weather patterns with their geographic locations.
+
+flowchart TD
+
+Station_Coords_df[/Weather_stations.csv/]
+
+merged_df{"Merged_df"}
+
+Station_Coords_df --> merged_df
+
+Degrees Classification Visualization
+
+In the first code snippet, I utilised the leaflet package to create an interactive map showcasing the temperature data from merged_df. I added circle markers to represent the geographic locations of weather stations, with colors indicating the Degrees_Classification: red for high temperatures, yellow for medium, and green for low. The popups provide detailed information about the temperature values, statistical measurement, and the corresponding weather station. This visualization offers an intuitive way to understand temperature distributions geographically.
+
 {r}
+
+# Using the Leaflet package to create a map to show the Degrees classification oon a map of Ireland, showing all of the wather stations. 
+
 leaflet(merged_df) %>%
-  addTiles() %>%  # Add default background map
+  addTiles() %>%  
   addCircleMarkers(~Longitude, ~Latitude, color = ~case_when(
     Degrees_Classification == "red" ~ "red",
     Degrees_Classification == "yellow" ~ "yellow",
     Degrees_Classification == "green" ~ "green",
-    TRUE ~ "black"  # Default color
+    TRUE ~ "black"  
   ),
-  popup = ~paste("Degrees Classification:", Sunshine_Value, Sunshine_Stat, Weather_Station),
-  radius = 30  # Adjust marker size
+  popup = ~paste("Degrees Classification:", Degrees_Value, Degrees_Stat, Weather_Station),
+  radius = 20  
   ) %>%
-  addLegend("bottomright", 
-            colors = c("green", "yellow", "red"), 
-            labels = c("High", "Medium", "Low"), 
-            title = "Degrees Classification")
+  addLegend("bottomright", colors = c("green", "yellow", "red"), labels = c("High", "Medium", "Low"), title = "Degrees Classification")
+
+Sunshine Classification Visualization
+
+The second snippet also employs leaflet to map the Sunshine_Classification. Similar to the first, circle markers are placed at the weather stations' locations, with colors signifying the classification of sunshine received: green for high, yellow for medium, and red for low sunshine levels. Popups on these markers display detailed sunshine values and information, allowing for an interactive exploration of how sunshine distribution varies across different regions.
 
 {r}
+
+# Using the Leaflet package to create a map to show the Sunshine_Classification on a map of Ireland, showing all of the wather stations. 
+
+
 leaflet(merged_df) %>%
-  addTiles() %>%  # Add default background map
+  addTiles() %>%  
   addCircleMarkers(~Longitude, ~Latitude, color = ~case_when(
     Sunshine_Classification == "red" ~ "red",
     Sunshine_Classification == "yellow" ~ "yellow",
     Sunshine_Classification == "green" ~ "green",
-    TRUE ~ "black"  # Default color
+    TRUE ~ "black"  
   ),
-  popup = ~paste("Sunshine Classification:", Degrees_Value, Degrees_Stat, Weather_Station),
-  radius = 30) %>%
+  popup = ~paste("Sunshine Classification:", Sunshine_Value, Sunshine_Stat, Weather_Station),
+  radius = 20) %>%
   addLegend("bottomright", colors = c("green", "yellow", "red"), labels = c("High", "Medium", "Low"), title = "Sunshine Classification")
 
+Rainfall Classification Visualization
+
+The final snippet creates another leaflet map, this time focusing on Rainfall_Classification. Circle markers are colored based on the rainfall data: green indicates low rainfall, yellow represents medium levels, and red signifies high rainfall. The popups on the markers provide insights into the rainfall values, the type of statistical measure used, and the specific weather station, enabling a detailed and location-specific analysis of rainfall patterns across the dataset.
+
 {r}
+
+# Using the Leaflet package to create a map to show the Rainfall_Classification on a map of Ireland, showing all of the wather stations. 
+
 leaflet(merged_df) %>%
   addTiles() %>%  
   addCircleMarkers(~Longitude, ~Latitude, color = ~case_when(
     Rainfall_Classification == "red" ~ "red",
     Rainfall_Classification == "yellow" ~ "yellow",
     Rainfall_Classification == "green" ~ "green",
-    TRUE ~ "black"  # Default color
-  ),
+    TRUE ~ "black"  
+    ),
   popup = ~paste("Rainfall Classification:", Rainfall_Value, Rainfall_Stat, Weather_Station),
-  radius = 30  ) %>%
-  addLegend("bottomright", 
-            colors = c("red", "yellow", "green"), 
-            labels = c("High", "Medium", "Low"), 
-            title = "Rainfall Classification")
+  radius = 20  ) %>%
+  addLegend("bottomright", colors = c("red", "yellow", "green"), labels = c("High", "Medium", "Low"), title = "Rainfall Classification")
+
+Rainfall Value vs Year Scatter Plot
+
+In the first code snippet, I used plot_ly to create an interactive scatter plot illustrating the relationship between Year and Rainfall_Value. Each point represents the rainfall value for a given year, allowing us to observe trends and fluctuations in rainfall over time. The hover text provides additional details, showing the exact year and rainfall value for each point. This graph is an excellent tool for visualizing how rainfall has varied annually, helping to identify patterns or anomalies in the data.
 
 {r}
+
+# Creating an Interactive graph to display the relationhip between Year and the Rainfall_Value
+
 Rainfall_Graph <- plot_ly(merged_df, x = ~Year, y = ~Rainfall_Value, type = 'scatter', mode = 'markers',
                hoverinfo = 'text',
                text = ~paste('X:', Year, 'Y:', Rainfall_Value)) %>%
@@ -275,7 +364,14 @@ Rainfall_Graph <- plot_ly(merged_df, x = ~Year, y = ~Rainfall_Value, type = 'sca
 Rainfall_Graph
 
 
+Sunshine Value by Weather Station Bar Chart
+
+The second snippet generates a bar chart displaying Sunshine_Value for each Weather_Station. This visualization is beneficial for comparing the amount of sunshine received at different weather stations. By using a bar chart, we can easily compare the sunshine values side by side, which is instrumental in identifying variations or trends in sunshine received across various locations.
+
 {r}
+
+# Creating an Interactive graph to display the relationhip between Sunshine_Value and each weather station
+
 Sunshine_Graph<- plot_ly(merged_df, x = ~Weather_Station, y = ~Sunshine_Value, type = 'bar') %>%
   layout(title = 'Bar Chart of Sunshine Value by Weather Station',
          xaxis = list(title = 'Weather Station'),
@@ -284,12 +380,76 @@ Sunshine_Graph<- plot_ly(merged_df, x = ~Weather_Station, y = ~Sunshine_Value, t
 Sunshine_Graph
 
 
+Degrees Value Over Weather Stations Line Chart
+
+The final snippet, despite mentioning a line chart in its title, actually creates a bar chart that shows Degrees_Value across different Weather_Station entries. Each bar represents the temperature value recorded at a specific weather station, enabling a comparative analysis of temperature data across various locations. The hover text enhances the graph's interactivity, providing detailed information about the temperature values at each station, making it a valuable tool for examining spatial variations in temperature data.
+
 {r}
+
+# Creating an Interactive graph to display the relationhip between Year and the Degrees_Value
+
 Degrees_Graph <- plot_ly(merged_df, x = ~Weather_Station, y = ~Degrees_Value, type = 'bar',
                hoverinfo = 'text',
                text = ~paste('Time:', Weather_Station, 'Value:', Degrees_Value)) %>%
-  layout(title = 'Line Chart of Value Over Years',
+  layout(title = 'Bar Chart of Degrees Value Over Years',
          xaxis = list(title = 'Weather Station'),
          yaxis = list(title = 'Degrees Value'))
 Degrees_Graph
 
+Multinomial Logistic Regression Analysis for Rainfall Classification Predictions
+
+In this code snippet, I've performed a series of steps to prepare the merged_df dataset for multinomial logistic regression, aiming to model the relationship between several predictors and the Rainfall_Classification outcome. Firstly, I converted the Rainfall_Classification column into a factor, which is necessary for the multinomial logistic regression analysis. I also ensured that Year and Month were in numeric format, which is crucial for their inclusion as predictors in the model.
+
+Next, I created data_for_model by selecting relevant columns and removing rows with missing values, ensuring that the model uses complete cases for training. I then fitted a multinomial logistic regression model (multinom function from the nnet package) using Rainfall_Classification as the response variable and Year, Month, Sunshine_Value, Degrees_Value, Longitude, and Latitude as predictors. This model aims to understand how these predictors influence the likelihood of different rainfall classifications.
+
+After summarizing the model, which showed the iterative process of model fitting and the final convergence, I used the fitted model to predict rainfall classifications on the dataset, aiming to evaluate the model's performance. Finally, I calculated the accuracy of the model by comparing the predicted classes against the actual Rainfall_Classification values in the dataset. The function calculate_accuracy I defined helped in this calculation, showing that the model's accuracy is approximately 49.39%. This analysis provided insights into the predictive power of the chosen variables concerning rainfall classification, evidenced by the model's accuracy and the summary output showing the coefficients and their statistical significance.
+
+{r}
+merged_df$Rainfall_Classification <- as.factor(merged_df$Rainfall_Classification)
+
+# Converted Year and Month to numerical figures
+merged_df$Year <- as.numeric(merged_df$Year)
+merged_df$Month <- as.numeric(merged_df$Month)
+
+# Removed missing values 
+data_for_model <- na.omit(merged_df[, c("Rainfall_Classification", "Year", "Month", "Sunshine_Value", "Degrees_Value", "Longitude", "Latitude")])
+
+# Fit the multinomial logistic regression model using all relevant variables
+model <- multinom(Rainfall_Classification ~ Year + Month + Sunshine_Value + Degrees_Value + Longitude + Latitude, data = data_for_model)
+
+
+# Predict classifications using the fitted model
+predicted_classes <- predict(model, newdata = data_for_model)
+
+#Calculae accurracy
+calculate_accuracy <- function(actual, predicted) {
+  correct_predictions <- sum(actual == predicted)
+  total_predictions <- length(actual)
+  accuracy <- correct_predictions / total_predictions
+  return(accuracy)
+}
+
+#Print the model accuracy
+model_accuracy <- calculate_accuracy(data_for_model$Rainfall_Classification, predicted_classes)
+print(paste("Model Accuracy with all variables:", model_accuracy))
+
+Visualizing Weather Station Data with a Word Cloud
+
+I converted the Weather_Station names in merged_df to lowercase for consistency before creating a word cloud, a visual tool that highlights the frequency of data points from various weather stations. This process ensures uniformity, preventing the same station names with different cases from being counted separately. The word cloud, generated with specific parameters to showcase all stations and emphasize the more frequent ones, visually reveals which stations are most represented, offering insights into data distribution and potentially guiding subsequent analytical focuses.
+
+{r}
+
+# Converted all letters to lower case
+merged_df$Weather_Station <- tolower(merged_df$Weather_Station)
+
+# Creating a word cloud
+wordcloud(words = merged_df$Weather_Station, 
+          min.freq = 1, 
+          random.order = FALSE,
+          colors = brewer.pal(8, "Dark2"))
+
+Conclusion
+
+In conclusion, this journey through weather data analysis using R has been insightful into the unpredictable nature of Irish weather. By meticulously cleaning, merging, and classifying the data, I have laid a robust foundation for a comprehensive analysis that intertwines various weather parameters with geographic contexts. The visualisations crafted, from scatter plots to word clouds, have not only showcased the trends and anomalies within the data but also showed the dynamic interplay between different weather elements across various locations and timeframes.
+
+The application of a multinomial logistic regression model to predict rainfall categories has further deepened my understanding, offering predictive insights that augment the descriptive analysis. This exploration has underscored the significance of thorough data preprocessing and the power of visual and statistical analysis in extracting meaningful patterns and insights from complex datasets. Ultimately, this assignment has enhanced my appreciation for the nuanced interactions within weather data, providing a richer perspective on the climatic dynamics captured in the datasets.
